@@ -1,15 +1,44 @@
 package se.hardchee.docker.proxy
 
+import scala.concurrent.duration._
+
 import akka.actor.{Actor, Props, ActorSystem}
 import akka.io.{IO, Tcp}
+import akka.pattern.ask
+import akka.util.Timeout
 
 import spray.can.Http
+import spray.http.{HttpRequest, HttpResponse}
 import spray.routing.HttpServiceActor
+
+import java.nio.charset.StandardCharsets.UTF_8
 
 class ProxyService(targetHost: String, targetPort: Int) extends HttpServiceActor {
   def receive: Receive = runRoute {
     dynamic {
-      complete("")
+      println(">=====")
+      scheme("http") {
+        extract(_.request) { request =>
+          import context.{system, dispatcher}
+          implicit val timeout: Timeout = 5.seconds
+
+          val uri = request.uri
+          val entity = request.entity
+
+          val newUri = uri.withHost(targetHost).withPort(targetPort)
+          val newRequest = HttpRequest(request.method, uri=newUri, entity=request.entity, protocol=request.protocol)
+
+          println(s"Request: $newRequest")
+          println(s"Entity: $entity")
+
+          onSuccess((IO(Http) ? newRequest).mapTo[HttpResponse]) { resp =>
+            val json: String = resp.entity.data.asString(UTF_8)
+            println(s"Response: $json")
+            println("<=====")
+            complete(json)
+          }
+        }
+      }
     }
   }
 }
