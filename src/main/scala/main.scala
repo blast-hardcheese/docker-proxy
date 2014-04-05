@@ -6,7 +6,7 @@ import akka.io.{IO, Tcp}
 import spray.can.Http
 import spray.routing.HttpServiceActor
 
-class ProxyService(target: String) extends HttpServiceActor {
+class ProxyService(targetHost: String, targetPort: Int) extends HttpServiceActor {
   def receive: Receive = runRoute {
     dynamic {
       complete("")
@@ -14,9 +14,9 @@ class ProxyService(target: String) extends HttpServiceActor {
   }
 }
 
-class Starter(target: String, bindHost: String, bindPort: Int) extends Actor {
+class Starter(targetHost: String, targetPort: Int, bindHost: String, bindPort: Int) extends Actor {
   import context.system
-  val handler = system.actorOf(Props(classOf[ProxyService], target), name = "handler")
+  val handler = system.actorOf(Props(classOf[ProxyService], targetHost, targetPort), name = "handler")
 
   IO(Http) ! Http.Bind(handler, bindHost, bindPort)
   def receive: Receive = {
@@ -25,10 +25,10 @@ class Starter(target: String, bindHost: String, bindPort: Int) extends Actor {
 }
 
 object Main extends App {
-  val target = args.headOption.getOrElse("tcp://127.0.0.1:8888")
+  val (targetHost, targetPort) = args.headOption.getOrElse("127.0.0.1:8888").split(":") match { case Array(h, p) => (h, p.toInt) }
   val (bindHost, bindPort) = ("localhost", 8080)
 
   implicit val system = ActorSystem()
 
-  val starter = system.actorOf(Props(classOf[Starter], target, bindHost, bindPort), name = "starter")
+  val starter = system.actorOf(Props(classOf[Starter], targetHost, targetPort, bindHost, bindPort), name = "starter")
 }
