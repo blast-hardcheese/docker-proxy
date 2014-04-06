@@ -13,8 +13,11 @@ import spray.routing.HttpServiceActor
 
 import java.nio.charset.StandardCharsets.UTF_8
 
-class ProxyService(targetHost: String, targetPort: Int) extends HttpServiceActor {
+import se.hardchee.docker.api.v1_10
+
+class ProxyService(val targetHost: String, val targetPort: Int) extends HttpServiceActor with v1_10 {
   def receive: Receive = runRoute {
+    v1_10 ~
     dynamic {
       println(">=====")
       scheme("http") {
