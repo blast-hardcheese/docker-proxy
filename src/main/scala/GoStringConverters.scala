@@ -12,3 +12,25 @@ trait GoStringConverters {
     }
   }
 }
+
+trait ToStringSerializers {
+  abstract class ToStringSerializer[T] {
+    def apply(a: T): String
+  }
+
+  implicit val Boolean2StringConverter = new ToStringSerializer[Boolean] {
+    def apply(v: Boolean) = v.toString
+  }
+
+  implicit val Int2StringConverter = new ToStringSerializer[Int] {
+    def apply(v: Int) = v.toString
+  }
+
+  implicit val Long2StringConverter = new ToStringSerializer[Long] {
+    def apply(v: Long) = v.toString
+  }
+
+  implicit def transform[T, U](v: Option[T])(implicit ev: ToStringSerializer[T]): Option[String] = {
+    v.map(ev.apply)
+  }
+}
