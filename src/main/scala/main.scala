@@ -8,7 +8,7 @@ import akka.pattern.ask
 import akka.util.Timeout
 
 import spray.can.Http
-import spray.http.{HttpRequest, HttpResponse}
+import spray.http.{HttpRequest, HttpResponse, Uri}
 import spray.routing.HttpServiceActor
 
 import java.nio.charset.StandardCharsets.UTF_8
@@ -16,6 +16,8 @@ import java.nio.charset.StandardCharsets.UTF_8
 import se.hardchee.docker.api.v1_10
 
 class ProxyService(val targetHost: String, val targetPort: Int) extends HttpServiceActor with v1_10 {
+  val base = Uri.from(scheme="http", host=targetHost, port=targetPort)
+
   def receive: Receive = runRoute {
     v1_10 ~
     dynamic {
